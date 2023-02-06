@@ -20,6 +20,11 @@ var relays = []string{
 	"wss://brb.io",
 }
 
+const (
+	exchangeName = "lndhub_invoices"
+	queueName    = "nostrifications"
+)
+
 func main() {
 	destinationPubkey := os.Getenv("NOSTR_DESTINATION_PUBKEY")
 	conn, err := amqp.Dial(os.Getenv("AMQP_CONNECTION_STRING"))
@@ -37,17 +42,17 @@ func main() {
 	defer ch.Close()
 
 	q, err := ch.QueueDeclare(
-		"nostrifications", // name
-		false,             // durable
-		false,             // delete when unused
-		true,              // exclusive
-		false,             // no-wait
-		nil,               // arguments
+		queueName,
+		false, // durable
+		false, // delete when unused
+		true,  // exclusive
+		false, // no-wait
+		nil,   // arguments
 	)
 	err = ch.QueueBind(
-		q.Name,            // queue name
-		"#",               // routing key
-		"lndhub_invoices", // exchange
+		q.Name,       // queue name
+		"#",          // routing key
+		exchangeName, // exchange
 		false,
 		nil,
 	)
