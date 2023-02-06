@@ -20,6 +20,8 @@ var relays = []string{
 	"wss://brb.io",
 }
 
+var secretKey = nostr.GeneratePrivateKey()
+
 const (
 	exchangeName = "lndhub_invoices"
 	queueName    = "nostrifications"
@@ -89,7 +91,6 @@ func main() {
 	}
 }
 func sendPaymentNotification(amount int, msg, dest, invoiceType string) {
-	secretKey := nostr.GeneratePrivateKey()
 	pk, _ := nostr.GetPublicKey(secretKey)
 	_, theirPk, err := nip19.Decode(dest)
 	theirHexPk := fmt.Sprintf("%v", theirPk)
@@ -106,7 +107,7 @@ func sendPaymentNotification(amount int, msg, dest, invoiceType string) {
 	if invoiceType == "outgoing" {
 		firstWord = "Sent"
 	}
-	encrypted, err := nip04.Encrypt(fmt.Sprintf("%s a %d sat payment. Message: %s", firstWord, amount, msg), ss)
+	encrypted, err := nip04.Encrypt(fmt.Sprintf("💸 %s a %d sat payment. Message: %s 💸", firstWord, amount, msg), ss)
 	if err != nil {
 		fmt.Println(err)
 		return
