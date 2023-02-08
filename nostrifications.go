@@ -37,7 +37,6 @@ type NostrificationConfig struct {
 }
 
 func NewNostrificationSender() (result *NostrificationSender, err error) {
-	//todo clean up
 	rabbit := &RabbitClient{}
 	err = rabbit.Init()
 	if err != nil {

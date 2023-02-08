@@ -11,6 +11,7 @@ import (
 
 const (
 	NostrificationHandler = "nostrification_handler"
+	SlackHandler          = "slack_handler"
 )
 
 func main() {
@@ -30,6 +31,12 @@ func main() {
 			logrus.Fatal(err)
 		}
 		handler = ns
+	case SlackHandler:
+		sh, err := NewSlackSender()
+		if err != nil {
+			logrus.Fatal(err)
+		}
+		handler = sh
 	default:
 		logrus.Fatalf("Unknown handler type: %s", handlerType)
 	}
@@ -48,7 +55,9 @@ func main() {
 			err = handler.Handle(ctx, msg)
 			if err != nil {
 				logrus.Error(err)
+				continue
 			}
+			msg.Ack(true)
 		}
 	}
 }
