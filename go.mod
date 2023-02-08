@@ -2,7 +2,12 @@ module github.com/getAlby/nostrifications
 
 go 1.20
 
-require github.com/nbd-wtf/go-nostr v0.12.0
+require (
+	github.com/nbd-wtf/go-nostr v0.12.0
+	github.com/sirupsen/logrus v1.9.0
+)
+
+require golang.org/x/sys v0.1.0 // indirect
 
 require (
 	github.com/SaveTheRbtz/generic-sync-map-go v0.0.0-20220414055132-a37292614db8 // indirect

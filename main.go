@@ -1,137 +1,38 @@
 package main
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"fmt"
 	"os"
-	"time"
+	"os/signal"
 
-	"github.com/nbd-wtf/go-nostr"
-	"github.com/nbd-wtf/go-nostr/nip04"
-	"github.com/nbd-wtf/go-nostr/nip19"
-	amqp "github.com/rabbitmq/amqp091-go"
+	"github.com/sirupsen/logrus"
 )
 
-var relays = []string{
-	"wss://relay.snort.social",
-	"wss://nos.lol",
-	"wss://brb.io",
-}
-
-var secretKey = nostr.GeneratePrivateKey()
-
 const (
-	exchangeName = "lndhub_invoices"
-	queueName    = "nostrifications"
+	NostrificationHandler = "nostrification_handler"
 )
 
 func main() {
-	destinationPubkey := os.Getenv("NOSTR_DESTINATION_PUBKEY")
-	conn, err := amqp.Dial(os.Getenv("AMQP_CONNECTION_STRING"))
-	if err != nil {
-		fmt.Println(err)
-		return
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer cancel()
+	handlerType := os.Getenv("HANDLER_TYPE")
+	var handler Handler
+	switch handlerType {
+	case NostrificationHandler:
+		handler = NewNostrificationSender()
+	default:
+		logrus.Fatalf("Unknown handler type: %s", handlerType)
 	}
-	defer conn.Close()
-
-	ch, err := conn.Channel()
+	msgs, err := handler.StartRabbit(ctx)
 	if err != nil {
-		fmt.Println(err)
-		return
+		logrus.Fatal(err)
 	}
-	defer ch.Close()
-
-	q, err := ch.QueueDeclare(
-		queueName,
-		false, // durable
-		false, // delete when unused
-		true,  // exclusive
-		false, // no-wait
-		nil,   // arguments
-	)
-	err = ch.QueueBind(
-		q.Name,       // queue name
-		"#",          // routing key
-		exchangeName, // exchange
-		false,
-		nil,
-	)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	msgs, err := ch.Consume(
-		q.Name, // queue
-		"",     // consumer
-		false,  // auto ack
-		false,  // exclusive
-		false,  // no local
-		false,  // no wait
-		nil,    // args
-	)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	fmt.Println("listening...")
-	for msg := range msgs {
-		fmt.Println("received msg")
-		payload := &Invoice{}
-		err = json.NewDecoder(bytes.NewReader(msg.Body)).Decode(payload)
-		if err != nil {
-			fmt.Println(err)
-			continue
+	for {
+		select {
+		case <-ctx.Done():
+			logrus.Info("Context canceled, exiting gracefully.")
+		case msg := <-msgs:
+			handler.Handle(ctx, msg)
 		}
-		fmt.Println(payload)
-		sendPaymentNotification(int(payload.Amount), payload.Memo, destinationPubkey, payload.Type)
-		fmt.Println("sent notification")
-		msg.Ack(true)
-	}
-}
-func sendPaymentNotification(amount int, msg, dest, invoiceType string) {
-	pk, _ := nostr.GetPublicKey(secretKey)
-	_, theirPk, err := nip19.Decode(dest)
-	theirHexPk := fmt.Sprintf("%v", theirPk)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	ss, err := nip04.ComputeSharedSecret(theirHexPk, secretKey)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	firstWord := "Received"
-	if invoiceType == "outgoing" {
-		firstWord = "Sent"
-	}
-	encrypted, err := nip04.Encrypt(fmt.Sprintf("💸 %s a %d sat payment. Message: %s 💸", firstWord, amount, msg), ss)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	ev := nostr.Event{
-		ID:        "",
-		PubKey:    pk,
-		CreatedAt: time.Now(),
-		Kind:      4,
-		Tags:      nostr.Tags{[]string{"p", fmt.Sprintf("%v", theirHexPk)}},
-		Content:   encrypted,
-		Sig:       "",
-	}
-
-	// calling Sign sets the event ID field and the event Sig field
-	ev.Sign(secretKey)
-
-	// publish the event to two relays
-	for _, url := range relays {
-		relay, e := nostr.RelayConnect(context.Background(), url)
-		if e != nil {
-			fmt.Println(e)
-			continue
-		}
-		fmt.Println("published to ", url, relay.Publish(context.Background(), ev))
 	}
 }
