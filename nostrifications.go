@@ -28,20 +28,31 @@ const (
 )
 
 type NostrificationSender struct {
-	cfg NostrificationConfig
+	cfg    NostrificationConfig
+	rabbit *RabbitClient
 }
 
 type NostrificationConfig struct {
-	Pubkey string `envconfig:"NOSTR_PUBKEY"`
+	Pubkey string
 }
 
-func NewNostrificationSender() *NostrificationSender {
+func NewNostrificationSender() (result *NostrificationSender, err error) {
 	//todo clean up
+	rabbit := &RabbitClient{}
+	err = rabbit.Init()
+	if err != nil {
+		return nil, err
+	}
 	return &NostrificationSender{
 		cfg: NostrificationConfig{
-			Pubkey: os.Getenv("NOSTR_PUBKEY"),
+			Pubkey: os.Getenv("NOSTR_DESTINATION_PUBKEY"),
 		},
-	}
+		rabbit: rabbit,
+	}, nil
+}
+
+func (ns *NostrificationSender) CloseRabbit() {
+	ns.rabbit.Close()
 }
 
 func (ns *NostrificationSender) Handle(ctx context.Context, msg amqp.Delivery) error {
@@ -54,46 +65,17 @@ func (ns *NostrificationSender) Handle(ctx context.Context, msg amqp.Delivery) e
 }
 
 func (ns *NostrificationSender) StartRabbit(ctx context.Context) (<-chan (amqp.Delivery), error) {
-	conn, err := amqp.Dial(os.Getenv("AMQP_CONNECTION_STRING"))
-	if err != nil {
-		return nil, err
-	}
-	defer conn.Close()
-
-	ch, err := conn.Channel()
-	if err != nil {
-		return nil, err
-	}
-	defer ch.Close()
-
-	q, err := ch.QueueDeclare(
-		queueName,
-		false, // durable
-		false, // delete when unused
-		true,  // exclusive
-		false, // no-wait
-		nil,   // arguments
-	)
-	err = ch.QueueBind(
-		q.Name,       // queue name
-		"#",          // routing key
-		exchangeName, // exchange
-		false,
-		nil,
-	)
-	if err != nil {
-		return nil, err
-	}
-	return ch.Consume(
-		q.Name, // queue
-		"",     // consumer
-		false,  // auto ack
-		false,  // exclusive
-		false,  // no local
-		false,  // no wait
-		nil,    // args
+	return ns.rabbit.ch.Consume(
+		ns.rabbit.cfg.RabbitMQQueueName, // queue
+		"",                              // consumer
+		false,                           // auto ack
+		false,                           // exclusive
+		false,                           // no local
+		false,                           // no wait
+		nil,                             // args
 	)
 }
+
 func sendPaymentNotification(amount int, msg, dest, invoiceType string) error {
 	pk, _ := nostr.GetPublicKey(secretKey)
 	_, theirPk, err := nip19.Decode(dest)

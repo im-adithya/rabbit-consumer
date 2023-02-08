@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
 )
 
@@ -13,13 +14,22 @@ const (
 )
 
 func main() {
+	err := godotenv.Load(".env")
+	if err != nil {
+		logrus.Warn("Failed to load .env file")
+	}
+
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 	handlerType := os.Getenv("HANDLER_TYPE")
 	var handler Handler
 	switch handlerType {
 	case NostrificationHandler:
-		handler = NewNostrificationSender()
+		ns, err := NewNostrificationSender()
+		if err != nil {
+			logrus.Fatal(err)
+		}
+		handler = ns
 	default:
 		logrus.Fatalf("Unknown handler type: %s", handlerType)
 	}
@@ -27,12 +37,18 @@ func main() {
 	if err != nil {
 		logrus.Fatal(err)
 	}
+	defer handler.CloseRabbit()
+	logrus.Info("Starting consumer...")
 	for {
 		select {
 		case <-ctx.Done():
 			logrus.Info("Context canceled, exiting gracefully.")
+			return
 		case msg := <-msgs:
-			handler.Handle(ctx, msg)
+			err = handler.Handle(ctx, msg)
+			if err != nil {
+				logrus.Error(err)
+			}
 		}
 	}
 }
