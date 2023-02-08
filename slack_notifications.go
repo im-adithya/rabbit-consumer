@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/kiwiidb/slack-go-webhook"
 	"github.com/lightningnetwork/lnd/lnrpc"
@@ -38,7 +39,8 @@ func (s *SlackSender) Handle(ctx context.Context, msg amqp.Delivery) error {
 		return err
 	}
 	msgs := map[string]string{
-		lnrpc.ChannelEventUpdate_OPEN_CHANNEL.String(): "Channel opened :zap:",
+		lnrpc.ChannelEventUpdate_OPEN_CHANNEL.String():   "Channel opened :zap:",
+		lnrpc.ChannelEventUpdate_CLOSED_CHANNEL.String(): "Channel closed :no_entry_sign:",
 	}
 
 	//check type
@@ -46,8 +48,10 @@ func (s *SlackSender) Handle(ctx context.Context, msg amqp.Delivery) error {
 		//don't put these on slack
 		return nil
 	}
+	attachment := createAttachment(chanEvent)
 	payload := slack.Payload{
 		Text:        msgs["type"],
+		Attachments: []slack.Attachment{attachment},
 		Username:    "Lightning Event Bot",
 		Channel:     "notifications-ops",
 		UnfurlMedia: true,
@@ -60,6 +64,33 @@ func (s *SlackSender) Handle(ctx context.Context, msg amqp.Delivery) error {
 		return fmt.Errorf("error: %s\n", err)
 	}
 	return nil
+}
+
+func createAttachment(chanEvent *lnrpc.ChannelEventUpdate) slack.Attachment {
+	result := slack.Attachment{}
+	switch chanEvent.Type {
+	case lnrpc.ChannelEventUpdate_OPEN_CHANNEL:
+		event := chanEvent.Channel.(*lnrpc.ChannelEventUpdate_OpenChannel)
+		result.AddField(slack.Field{
+			Title: "Remote peer pubkey",
+			Value: event.OpenChannel.RemotePubkey,
+		})
+		result.AddField(slack.Field{
+			Title: "Capacity",
+			Value: strconv.Itoa(int(event.OpenChannel.Capacity)),
+		})
+	case lnrpc.ChannelEventUpdate_CLOSED_CHANNEL:
+		event := chanEvent.Channel.(*lnrpc.ChannelEventUpdate_ClosedChannel)
+		result.AddField(slack.Field{
+			Title: "Remote peer pubkey",
+			Value: event.ClosedChannel.RemotePubkey,
+		})
+		result.AddField(slack.Field{
+			Title: "Capacity",
+			Value: strconv.Itoa(int(event.ClosedChannel.Capacity)),
+		})
+	}
+	return result
 }
 
 func (s *SlackSender) StartRabbit(ctx context.Context) (<-chan (amqp.Delivery), error) {
