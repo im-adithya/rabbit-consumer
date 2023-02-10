@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 
 	"github.com/kiwiidb/slack-go-webhook"
 	"github.com/lightningnetwork/lnd/lnrpc"
@@ -36,7 +35,6 @@ func (s *InvoiceEventHandler) Handle(ctx context.Context, msg amqp.Delivery) err
 	//and the user id TLV is absent
 	//and the boostagram TLV is present
 	recs := invoice.Htlcs[0].CustomRecords
-	fmt.Println(recs[TLV_WALLET_ID])
 	if invoice.IsKeysend && recs[TLV_WALLET_ID] == nil && recs[TLV_BOOSTAGRAM] != nil {
 		attachment, err := createLostPodcasterAttachment(invoice)
 		if err != nil {
