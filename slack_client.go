@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/kiwiidb/slack-go-webhook"
 )
@@ -11,6 +12,15 @@ type SlackClient struct {
 	Channel   string
 	Name      string
 	IconEmoji string
+}
+
+func DefaultSlackClient() (result *SlackClient) {
+	return &SlackClient{
+		Webhook:   os.Getenv("SLACK_WEBHOOK_URL"),
+		Channel:   "#notifications-ops",
+		Name:      "Lightning Event Bot",
+		IconEmoji: ":lightning:",
+	}
 }
 
 func (sc *SlackClient) Send(text string, attachment slack.Attachment) error {

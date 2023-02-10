@@ -6,13 +6,13 @@ import (
 	"os/signal"
 
 	"github.com/joho/godotenv"
-	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/sirupsen/logrus"
 )
 
 const (
-	NostrificationHandler = "nostrification_handler"
-	SlackHandler          = "slack_handler"
+	NostrificationHandler       = "nostrification_handler"
+	SlackChannelEventHandler    = "slack_channel_event_handler"
+	SlackRawInvoiceEventHandler = "slack_raw_invoice_event_handler"
 )
 
 func main() {
@@ -32,8 +32,8 @@ func main() {
 			logrus.Fatal(err)
 		}
 		handler = ns
-	case SlackHandler:
-		sh, err := NewSlackSender()
+	case SlackRawInvoiceEventHandler:
+		sh, err := NewInvoiceEventHandler()
 		if err != nil {
 			logrus.Fatal(err)
 		}
@@ -60,8 +60,7 @@ func main() {
 	if err != nil {
 		logrus.Fatal(err)
 	}
-	logrus.Info("Starting consumer...")
-	logrus.Info(lnrpc.ChannelEventUpdate_OPEN_CHANNEL.String())
+	logrus.Infof("Starting listening to exchange %s, routing key %s", rabbit.cfg.RabbitMQExchange, rabbit.cfg.RabbitMQRoutingKey)
 	for {
 		select {
 		case <-ctx.Done():

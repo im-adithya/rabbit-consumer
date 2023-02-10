@@ -1,4 +1,4 @@
-module github.com/getAlby/nostrifications
+module github.com/getAlby/rabbit-consumer
 
 go 1.20
 
