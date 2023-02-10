@@ -6,6 +6,7 @@ import (
 	"os/signal"
 
 	"github.com/joho/godotenv"
+	"github.com/lightningnetwork/lnd/lnrpc"
 	"github.com/sirupsen/logrus"
 )
 
@@ -40,12 +41,27 @@ func main() {
 	default:
 		logrus.Fatalf("Unknown handler type: %s", handlerType)
 	}
-	msgs, err := handler.StartRabbit(ctx)
+	//init rabbit
+	rabbit := &RabbitClient{}
+	err = rabbit.Init()
 	if err != nil {
 		logrus.Fatal(err)
 	}
-	defer handler.CloseRabbit()
+	defer rabbit.Close()
+	msgs, err := rabbit.ch.Consume(
+		rabbit.cfg.RabbitMQQueueName, // queue
+		"",                           // consumer
+		false,                        // auto ack
+		false,                        // exclusive
+		false,                        // no local
+		false,                        // no wait
+		nil,                          // args
+	)
+	if err != nil {
+		logrus.Fatal(err)
+	}
 	logrus.Info("Starting consumer...")
+	logrus.Info(lnrpc.ChannelEventUpdate_OPEN_CHANNEL.String())
 	for {
 		select {
 		case <-ctx.Done():

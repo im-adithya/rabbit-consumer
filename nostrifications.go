@@ -28,8 +28,7 @@ const (
 )
 
 type NostrificationSender struct {
-	cfg    NostrificationConfig
-	rabbit *RabbitClient
+	cfg NostrificationConfig
 }
 
 type NostrificationConfig struct {
@@ -37,23 +36,12 @@ type NostrificationConfig struct {
 }
 
 func NewNostrificationSender() (result *NostrificationSender, err error) {
-	rabbit := &RabbitClient{}
-	err = rabbit.Init()
-	if err != nil {
-		return nil, err
-	}
 	return &NostrificationSender{
 		cfg: NostrificationConfig{
 			Pubkey: os.Getenv("NOSTR_DESTINATION_PUBKEY"),
 		},
-		rabbit: rabbit,
 	}, nil
 }
-
-func (ns *NostrificationSender) CloseRabbit() {
-	ns.rabbit.Close()
-}
-
 func (ns *NostrificationSender) Handle(ctx context.Context, msg amqp.Delivery) error {
 	payload := &Invoice{}
 	err := json.NewDecoder(bytes.NewReader(msg.Body)).Decode(payload)
@@ -61,18 +49,6 @@ func (ns *NostrificationSender) Handle(ctx context.Context, msg amqp.Delivery) e
 		return err
 	}
 	return sendPaymentNotification(int(payload.Amount), payload.Memo, ns.cfg.Pubkey, payload.Type)
-}
-
-func (ns *NostrificationSender) StartRabbit(ctx context.Context) (<-chan (amqp.Delivery), error) {
-	return ns.rabbit.ch.Consume(
-		ns.rabbit.cfg.RabbitMQQueueName, // queue
-		"",                              // consumer
-		false,                           // auto ack
-		false,                           // exclusive
-		false,                           // no local
-		false,                           // no wait
-		nil,                             // args
-	)
 }
 
 func sendPaymentNotification(amount int, msg, dest, invoiceType string) error {

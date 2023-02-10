@@ -10,8 +10,6 @@ import (
 
 type Handler interface {
 	Handle(ctx context.Context, msg amqp.Delivery) error
-	StartRabbit(ctx context.Context) (<-chan (amqp.Delivery), error)
-	CloseRabbit()
 }
 
 type RabbitClient struct {
