@@ -11,8 +11,8 @@ import (
 
 const (
 	NostrificationHandler       = "nostrification_handler"
-	SlackChannelEventHandler    = "slack_channel_event_handler"
-	SlackRawInvoiceEventHandler = "slack_raw_invoice_event_handler"
+	SlackChannelEventHandler    = "slack_channel_handler"
+	SlackRawInvoiceEventHandler = "slack_raw_invoice_handler"
 )
 
 func main() {
@@ -60,7 +60,8 @@ func main() {
 	if err != nil {
 		logrus.Fatal(err)
 	}
-	logrus.Infof("Starting listening to exchange %s, routing key %s", rabbit.cfg.RabbitMQExchange, rabbit.cfg.RabbitMQRoutingKey)
+	logrus.Infof("Started listening to exchange %s, routing key %s, handler %s",
+		rabbit.cfg.RabbitMQExchange, rabbit.cfg.RabbitMQRoutingKey, handlerType)
 	for {
 		select {
 		case <-ctx.Done():
