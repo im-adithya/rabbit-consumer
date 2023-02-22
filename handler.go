@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/kelseyhightower/envconfig"
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -30,13 +31,17 @@ func (rabbit *RabbitClient) Close() {
 	rabbit.conn.Close()
 }
 
-func (rabbit *RabbitClient) Init() error {
+func (rabbit *RabbitClient) Init(handlerType string) error {
 	cfg := &RabbitConfig{}
 	err := envconfig.Process("", cfg)
 	if err != nil {
 		logrus.Fatalf("Error loading environment variables: %v", err)
 	}
 	rabbit.cfg = cfg
+	//default queue name = exchange + _ + handler type
+	if rabbit.cfg.RabbitMQQueueName == "" {
+		rabbit.cfg.RabbitMQQueueName = fmt.Sprintf("%s_%s", cfg.RabbitMQExchange, handlerType)
+	}
 	conn, err := amqp.Dial(rabbit.cfg.RabbitMQUri)
 	if err != nil {
 		return err

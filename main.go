@@ -46,7 +46,7 @@ func main() {
 	}
 	//init rabbit
 	rabbit := &RabbitClient{}
-	err = rabbit.Init()
+	err = rabbit.Init(handlerType)
 	if err != nil {
 		logrus.Fatal(err)
 	}
