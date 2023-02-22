@@ -13,6 +13,7 @@ const (
 	NostrificationHandler       = "nostrification_handler"
 	SlackChannelEventHandler    = "slack_channel_handler"
 	SlackRawInvoiceEventHandler = "slack_raw_invoice_handler"
+	PrintEventHandler           = "print_handler"
 )
 
 func main() {
@@ -38,6 +39,8 @@ func main() {
 			logrus.Fatal(err)
 		}
 		handler = sh
+	case PrintEventHandler:
+		handler = &PrintHandler{}
 	default:
 		logrus.Fatalf("Unknown handler type: %s", handlerType)
 	}
@@ -71,9 +74,10 @@ func main() {
 			err = handler.Handle(ctx, msg)
 			if err != nil {
 				logrus.Error(err)
+				msg.Nack(false, true)
 				continue
 			}
-			msg.Ack(true)
+			msg.Ack(false)
 		}
 	}
 }
