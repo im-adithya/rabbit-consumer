@@ -17,7 +17,7 @@ type SlackClient struct {
 func DefaultSlackClient() (result *SlackClient) {
 	return &SlackClient{
 		Webhook:   os.Getenv("SLACK_WEBHOOK_URL"),
-		Channel:   "#notifications-ops",
+		Channel:   os.Getenv("SLACK_CHANNEL"),
 		Name:      "Lightning Event Bot",
 		IconEmoji: ":lightning:",
 	}
