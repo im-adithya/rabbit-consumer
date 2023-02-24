@@ -18,5 +18,8 @@ and define a new `..Handler` constant.
 
 # Slack invoice publisher
 This handler listens to LND invoices and currently examines if someone send us a keysend payment without specifying the recipient. In that case it will post the boostagram information to a Slack channel so we can find the podcaster or app that might have something misconfigured.
+
+- `SLACK_WEBHOOK_URL`
+- `SLACK_CHANNEL`
 # Print handler
 Can be used for debugging just logs the raw events, does nothing else
