@@ -34,6 +34,10 @@ func (s *InvoiceEventHandler) Handle(ctx context.Context, msg amqp.Delivery) err
 	//check if it's keysend
 	//and the user id TLV is absent
 	//and the boostagram TLV is present
+	if len(invoice.Htlcs) < 1 {
+		//not a realy payment probably
+		return nil
+	}
 	recs := invoice.Htlcs[0].CustomRecords
 	if invoice.IsKeysend && recs[TLV_WALLET_ID] == nil && recs[TLV_BOOSTAGRAM] != nil {
 		attachment, err := createLostPodcasterAttachment(invoice)

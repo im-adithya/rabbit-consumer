@@ -70,11 +70,17 @@ func main() {
 		case <-ctx.Done():
 			logrus.Info("Context canceled, exiting gracefully.")
 			return
-		case msg := <-msgs:
+		case msg, ok := <-msgs:
+			if !ok {
+				//channel closed, connection to rabbit lost
+				logrus.Fatal("Disconnected from RabbitMQ")
+			}
 			err = handler.Handle(ctx, msg)
 			if err != nil {
-				logrus.Error(err)
-				msg.Nack(false, true)
+				logrus.WithField("payload", string(msg.Body)).Error(err)
+				//don't requeue here
+				//otherwise we might get into an infinite loop
+				msg.Nack(false, false)
 				continue
 			}
 			msg.Ack(false)
