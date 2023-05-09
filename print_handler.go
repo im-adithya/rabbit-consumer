@@ -2,14 +2,24 @@ package main
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 
 	amqp "github.com/rabbitmq/amqp091-go"
-	"github.com/sirupsen/logrus"
 )
 
 type PrintHandler struct{}
 
 func (ph *PrintHandler) Handle(ctx context.Context, msg amqp.Delivery) error {
-	logrus.WithField("msg", string(msg.Body)).Info("New event")
+	payload := map[string]interface{}{}
+	err := json.Unmarshal(msg.Body, &payload)
+	if err != nil {
+		return err
+	}
+	pretty, err := json.MarshalIndent(payload, "", "  ")
+	if err != nil {
+		return err
+	}
+	fmt.Println(string(pretty))
 	return nil
 }
