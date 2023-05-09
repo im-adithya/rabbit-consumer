@@ -8,6 +8,7 @@ type Invoice struct {
 	UserLogin                string            `json:"user_login"`
 	Amount                   int64             `json:"amount"`
 	Fee                      int64             `json:"fee"`
+	Balance                  int64             `json:"balance"`
 	Memo                     string            `json:"memo"`
 	DescriptionHash          string            `json:"description_hash,omitempty"`
 	PaymentRequest           string            `json:"payment_request"`

@@ -13,6 +13,7 @@ const (
 	NostrificationHandler       = "nostrification_handler"
 	SlackChannelEventHandler    = "slack_channel_handler"
 	SlackRawInvoiceEventHandler = "slack_raw_invoice_handler"
+	BalanceEventHandler         = "balance_event_handler"
 	PrintEventHandler           = "print_handler"
 )
 
@@ -41,6 +42,10 @@ func main() {
 		handler = sh
 	case PrintEventHandler:
 		handler = &PrintHandler{}
+	case BalanceEventHandler:
+		handler = &BalanceEventDispatcher{
+			URL: os.Getenv("NWC_BALANCE_EVENT_URL"),
+		}
 	default:
 		logrus.Fatalf("Unknown handler type: %s", handlerType)
 	}
