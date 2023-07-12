@@ -15,6 +15,7 @@ const (
 	SlackRawInvoiceEventHandler = "slack_raw_invoice_handler"
 	BalanceEventHandler         = "balance_event_handler"
 	PrintEventHandler           = "print_handler"
+	DeadLetterHandler           = "dead_letter_handler"
 )
 
 func main() {
@@ -40,6 +41,12 @@ func main() {
 			logrus.Fatal(err)
 		}
 		handler = sh
+	case DeadLetterHandler:
+		sdlh, err := NewStoreDeadLetterHandler()
+		if err != nil {
+			logrus.Fatal(err)
+		}
+		handler = sdlh
 	case PrintEventHandler:
 		handler = &PrintHandler{}
 	case BalanceEventHandler:
