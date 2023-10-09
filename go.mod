@@ -3,13 +3,8 @@ module github.com/getAlby/rabbit-consumer
 go 1.20
 
 require (
-	github.com/joho/godotenv v1.5.1
-	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/kiwiidb/slack-go-webhook v0.0.0-20211006082722-4e4133e8d8b3
 	github.com/nbd-wtf/go-nostr v0.12.0
-	github.com/sirupsen/logrus v1.9.3
-	gorm.io/driver/postgres v1.3.8
-	gorm.io/gorm v1.23.8
 )
 
 require (
@@ -60,8 +55,6 @@ require (
 	github.com/jackc/pgtype v1.11.0 // indirect
 	github.com/jackc/pgx/v4 v4.16.1 // indirect
 	github.com/jessevdk/go-flags v1.4.0 // indirect
-	github.com/jinzhu/inflection v1.0.0 // indirect
-	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/jonboulle/clockwork v0.2.2 // indirect
 	github.com/jrick/logrotate v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.11 // indirect
@@ -101,6 +94,7 @@ require (
 	github.com/prometheus/common v0.26.0 // indirect
 	github.com/prometheus/procfs v0.6.0 // indirect
 	github.com/rogpeppe/fastuuid v1.2.0 // indirect
+	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/soheilhy/cmux v0.1.5 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
@@ -159,7 +153,8 @@ require (
 	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.0.1 // indirect
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/lightningnetwork/lnd v0.15.5-beta.rc2
-	github.com/rabbitmq/amqp091-go v1.6.1
+	github.com/rabbitmq/amqp091-go v1.7.0
 	github.com/valyala/fastjson v1.6.3 // indirect
+	github.com/wagslane/go-rabbitmq v0.12.4
 	golang.org/x/exp v0.0.0-20221106115401-f9659909a136 // indirect
 )
